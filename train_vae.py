@@ -41,8 +41,8 @@ def main():
 
     n_epochs = 50
     keep_prob = 0.8
-    n_code = 768
-    learning_rate = 1e-4
+    n_code = 256
+    learning_rate = 1e-3
     img_step = 20
 
     timestamp = datetime.today().strftime('%Y%m%d-%H%M%S')
@@ -57,9 +57,9 @@ def main():
             ae = VAE(input_shape=(None, 180, 320, 3),
                      convolutional=True,
                      variational=True,
-                     n_filters=[128, 128, 192, 256, 512],
-                     filter_sizes=[7, 5, 3, 3, 3],
-                     n_hidden=2048,
+                     n_filters=[64, 64, 64, 128, 128, 192],
+                     filter_sizes=[7, 7, 5, 3, 3, 3, 3],
+                     n_hidden=512,
                      n_code=n_code,
                      dropout=True,
                      activation=tf.nn.elu)
@@ -92,13 +92,19 @@ def main():
                 batch_i += 1
 
                 Xs = sess.run(image_batch)
-                train_loss, s, i, _ = sess.run([ae['cost'], test_summaries, global_step, optimizer],
-                                               feed_dict={ae['x']: Xs,
-                                                          ae['train']: True,
-                                                          ae['keep_prob']: keep_prob})
-                sv.summary_computed(sess, s, global_step=i)
+                if batch_i % 10 == 0:
+                    train_loss, s, i, _ = sess.run([ae['cost'], test_summaries, global_step, optimizer],
+                                                   feed_dict={ae['x']: Xs,
+                                                              ae['train']: True,
+                                                              ae['keep_prob']: keep_prob})
+                    sv.summary_computed(sess, s, global_step=i)
+                else:
+                    train_loss, _ = sess.run([ae['cost'], optimizer],
+                                             feed_dict={ae['x']: Xs,
+                                                        ae['train']: True,
+                                                        ae['keep_prob']: keep_prob})
 
-                # current batch and mini-batch training loss
+                # current batch number and mini-batch training loss
                 print(batch_i, train_loss)
 
                 if batch_i % img_step == 0:
