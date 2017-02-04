@@ -1,5 +1,6 @@
 from os import path
 from glob import glob
+from datetime import datetime
 
 import cv2
 import tensorflow as tf
@@ -36,39 +37,44 @@ def main():
 
     tfrecord_file_names = glob(path.join('data', '*.tfrecord.gz'))
     max_reads = 200
-    batch_size = 100
+    batch_size = 50
 
     n_epochs = 50
     keep_prob = 0.8
-    n_code = 128
-    learning_rate = 5e-2
+    n_code = 768
+    learning_rate = 1e-4
     img_step = 20
 
+    timestamp = datetime.today().strftime('%Y%m%d-%H%M%S')
+    log_path = path.join('log', timestamp)
+
     with tf.Graph().as_default() as graph:
+        global_step = tf.Variable(initial_value=0, trainable=False, name='global_step', dtype=tf.int64)
+
         image_batch, type_batch = import_images(tfrecord_file_names, max_reads=max_reads, batch_size=batch_size)
 
         with tf.variable_scope('vae'):
             ae = VAE(input_shape=(None, 180, 320, 3),
                      convolutional=True,
                      variational=True,
-                     n_filters=[16, 32, 64, 256],
-                     filter_sizes=[7, 5, 3, 3],
-                     n_hidden=192,
+                     n_filters=[128, 128, 192, 256, 512],
+                     filter_sizes=[7, 5, 3, 3, 3],
+                     n_hidden=2048,
                      n_code=n_code,
-                     dropout=False,
+                     dropout=True,
                      activation=tf.nn.elu)
             loss = ae['cost']
 
+            tf.summary.scalar('loss', loss, collections=['test'])
+            tf.summary.image('input', ae['x'], collections=['test'])
+            tf.summary.image('reconstructed', ae['y'], collections=['test'])
+            test_summaries = tf.summary.merge_all('test')
+
         with tf.variable_scope('training'):
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
+            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step)
 
-    coord = tf.train.Coordinator()
-    with tf.Session(graph=graph) as sess:
-        init = tf.group(tf.local_variables_initializer(), tf.global_variables_initializer())
-        sess.run(init)
-
-        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-
+    sv = tf.train.Supervisor(graph=graph, logdir=log_path)
+    with sv.managed_session() as sess:
         try:
             batch_i = 0
             epoch_i = 0
@@ -77,23 +83,20 @@ def main():
             test_Xs = np.array([cv2.imread(path.join('test', 'test_1.jpg')),
                                 cv2.imread(path.join('test', 'test_2.jpg'))], np.float32) / 255.
 
-            if False:
-                print('Initial evaluation.')
-                reconstructed = sess.run(ae['y'], feed_dict={ae['x']: test_Xs,
-                                                             ae['train']: False,
-                                                             ae['keep_prob']: 1.0})
+            progress_vid = cv2.VideoWriter('output-{0:s}.mp4'.format(timestamp),
+                                           fourcc=cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
+                                           fps=10.0,
+                                           frameSize=(2*320, 2*180))
 
-                canvas = example_gallery(test_Xs, reconstructed)
-                cv2.imshow(window, canvas)
-
-            while not coord.should_stop() and epoch_i < n_epochs:
+            while not sv.should_stop() and epoch_i < n_epochs:
                 batch_i += 1
 
                 Xs = sess.run(image_batch)
-                train_loss, _ = sess.run([ae['cost'], optimizer],
-                                         feed_dict={ae['x']: Xs,
-                                                    ae['train']: True,
-                                                    ae['keep_prob']: keep_prob})
+                train_loss, s, i, _ = sess.run([ae['cost'], test_summaries, global_step, optimizer],
+                                               feed_dict={ae['x']: Xs,
+                                                          ae['train']: True,
+                                                          ae['keep_prob']: keep_prob})
+                sv.summary_computed(sess, s, global_step=i)
 
                 # current batch and mini-batch training loss
                 print(batch_i, train_loss)
@@ -105,19 +108,20 @@ def main():
                                                                  ae['keep_prob']: 1.0})
 
                     canvas = example_gallery(test_Xs, reconstructed)
+                    progress_vid.write((canvas * 255.).astype(np.uint8))
+
                     cv2.imshow(window, canvas)
 
                 # display responsiveness
                 if (cv2.waitKey(1) & 0xff) == 27:
-                    coord.request_stop()
+                    sv.request_stop()
                     break
-
 
         except tf.errors.OutOfRangeError:
             print('Read all examples.')
         finally:
-            coord.request_stop()
-            coord.join(threads)
+            progress_vid.release()
+            sv.request_stop()
 
         cv2.destroyWindow(window)
 
