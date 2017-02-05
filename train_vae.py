@@ -41,8 +41,8 @@ def main():
 
     n_epochs = 50
     keep_prob = 0.8
-    n_code = 256
-    learning_rate = 1e-3
+    n_code = 512
+    learning_rate = 1e-4
     img_step = 20
 
     timestamp = datetime.today().strftime('%Y%m%d-%H%M%S')
@@ -57,11 +57,11 @@ def main():
             ae = VAE(input_shape=(None, 180, 320, 3),
                      convolutional=True,
                      variational=True,
-                     n_filters=[64, 64, 64, 128, 128, 192],
-                     filter_sizes=[7, 7, 5, 3, 3, 3, 3],
-                     n_hidden=512,
+                     n_filters=[64, 64, 64, 128, 128, 192, 256],
+                     filter_sizes=[7, 7, 5, 5, 3, 3, 3, 3],
+                     n_hidden=None,
                      n_code=n_code,
-                     dropout=True,
+                     dropout=False,
                      activation=tf.nn.elu)
             loss = ae['cost']
 
