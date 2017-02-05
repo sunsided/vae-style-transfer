@@ -11,6 +11,7 @@ import numpy as np
 
 
 def extract_video_frames(queue: PriorityQueue,
+                         source: int,
                          cap: cv2.VideoCapture,
                          crop: Tuple[int, int, int, int],
                          target_width: int,
@@ -33,7 +34,7 @@ def extract_video_frames(queue: PriorityQueue,
         frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
 
         random_priority = random()
-        queue.put((random_priority, (buffer, 0)))
+        queue.put((random_priority, (buffer, source)))
 
         if display_progress:
             cv2.imshow(window, buffer)
@@ -47,10 +48,11 @@ def extract_video_frames(queue: PriorityQueue,
 
 
 def load_images(queue: PriorityQueue,
-                         file_path: str,
-                         target_width: int,
-                         target_height: int,
-                         display_progress: bool=False):
+                source: int,
+                file_path: str,
+                target_width: int,
+                target_height: int,
+                display_progress: bool=False):
     window = 'image'
     if display_progress:
         cv2.namedWindow(window)
@@ -60,7 +62,7 @@ def load_images(queue: PriorityQueue,
         buffer = cv2.resize(buffer, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
         random_priority = random()
-        queue.put((random_priority, (buffer, 1)))
+        queue.put((random_priority, (buffer, source)))
 
         if display_progress:
             cv2.imshow(window, buffer)
@@ -74,18 +76,26 @@ def load_images(queue: PriorityQueue,
 def main():
     image_path = '/home/markus/Downloads/Leonidafremov - Gallery'
 
-    video_file = '/media/markus/Nephthys1/Filme/Musikvideos/Wim - See You Hurry.mp4'
-    video_crop = (64, 32, 64, 32)
+    video_file_0 = '/media/markus/Nephthys1/Filme/Musikvideos/Wim - See You Hurry.mp4'
+    video_crop_0 = (64, 32, 64, 32)
+
+    video_file_1 = '/home/markus/Downloads/Disclosure - Magnets ft  Lorde/Disclosure - Magnets ft. Lorde (1080p_25fps_H264-128kbit_AAC).mp4'
+    video_crop_1 = (150, 0, 150, 1)
 
     frame_queue = PriorityQueue()
 
-    cap = cv2.VideoCapture(video_file)
+    cap_0 = cv2.VideoCapture(video_file_0)
+    cap_1 = cv2.VideoCapture(video_file_1)
     try:
-        height, width = cap.get(cv2.CAP_PROP_FRAME_HEIGHT), \
-                        cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        n_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        frame_step = 10
-        print('Extracting {0:d} frames.'.format(int(n_frames // frame_step)))
+        height, width = cap_0.get(cv2.CAP_PROP_FRAME_HEIGHT), \
+                        cap_0.get(cv2.CAP_PROP_FRAME_WIDTH)
+        n_frames_0 = cap_0.get(cv2.CAP_PROP_FRAME_COUNT)
+        frame_step_0 = 10
+
+        n_frames_1 = cap_1.get(cv2.CAP_PROP_FRAME_COUNT)
+        frame_step_1 = 8
+
+        print('Extracting {0:d} and {1:d} frames.'.format(int(n_frames_0 // frame_step_0), int(n_frames_1 // frame_step_1)))
 
         aspect = float(height) / float(width)
         new_width = 320
@@ -93,9 +103,11 @@ def main():
         assert new_height == 180
 
         threads = [Thread(target=extract_video_frames,
-                          args=(frame_queue, cap, video_crop, new_width, new_height, frame_step, False)),
+                          args=(frame_queue, 0, cap_0, video_crop_0, new_width, new_height, frame_step_0, False)),
+                   Thread(target=extract_video_frames,
+                          args=(frame_queue, 2, cap_1, video_crop_1, new_width, new_height, frame_step_1, False)),
                    Thread(target=load_images,
-                          args=(frame_queue, image_path, new_width, new_height, False))]
+                          args=(frame_queue, 1, image_path, new_width, new_height, False))]
 
         print('Loading frames ...')
         for thread in threads:
@@ -106,7 +118,8 @@ def main():
         print('Done loading frames.')
 
     finally:
-        cap.release()
+        cap_0.release()
+        cap_1.release()
 
     print('Writing TFRecords ...')
 

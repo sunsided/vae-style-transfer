@@ -18,17 +18,15 @@ def example_gallery(Xs, reconstructed):
     if np.isnan(reconstructed).any():
         print('Warning: NaN value detected in reconstruction.')
 
-    org = Xs[0, :, :, :]
-    img = reconstructed[0, :, :, :]
-    img = normalize_img(img)
-    canvas_left = np.concatenate((org, img), axis=0)
+    slices = []
 
-    org = Xs[1, :, :, :]
-    img = reconstructed[1, :, :, :]
-    img = normalize_img(img)
-    canvas_right = np.concatenate((org, img), axis=0)
+    for i in range(3):
+        org = Xs[i, :, :, :]
+        img = reconstructed[i, :, :, :]
+        img = normalize_img(img)
+        slices.append(np.concatenate((org, img), axis=0))
 
-    return np.concatenate((canvas_left, canvas_right), axis=1)
+    return np.concatenate(slices, axis=1)
 
 
 def main():
@@ -81,7 +79,8 @@ def main():
 
             print('Loading test data ...')
             test_Xs = np.array([cv2.imread(path.join('test', 'test_1.jpg')),
-                                cv2.imread(path.join('test', 'test_2.jpg'))], np.float32) / 255.
+                                cv2.imread(path.join('test', 'test_2.jpg')),
+                                cv2.imread(path.join('test', 'test_3.jpg'))], np.float32) / 255.
 
             progress_vid = cv2.VideoWriter('output-{0:s}.mp4'.format(timestamp),
                                            fourcc=cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
