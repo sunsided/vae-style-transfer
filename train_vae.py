@@ -82,10 +82,11 @@ def main():
                                 cv2.imread(path.join('test', 'test_2.jpg')),
                                 cv2.imread(path.join('test', 'test_3.jpg'))], np.float32) / 255.
 
+            n_tests = test_Xs.shape[0]
             progress_vid = cv2.VideoWriter('output-{0:s}.mp4'.format(timestamp),
                                            fourcc=cv2.VideoWriter_fourcc('m', 'p', '4', 'v'),
                                            fps=10.0,
-                                           frameSize=(2*320, 2*180))
+                                           frameSize=(n_tests*320, 2*180))
 
             while not sv.should_stop() and epoch_i < n_epochs:
                 batch_i += 1
