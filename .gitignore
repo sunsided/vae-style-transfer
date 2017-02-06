@@ -1,5 +1,6 @@
 data/
-log/
+log*/
+exported/
 *.mp4
 
 # Created by https://www.gitignore.io/api/pycharm,python
