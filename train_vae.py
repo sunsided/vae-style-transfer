@@ -33,18 +33,21 @@ def main():
     window = 'preview'
     cv2.namedWindow(window)
 
-    tfrecord_file_names = glob(path.join('data', '*.tfrecord.gz'))
+    tfrecord_file_names = glob(path.join('data', '*-2.tfrecord.gz'))
     max_reads = 200
     batch_size = 50
 
     n_epochs = 50
     keep_prob = 0.8
     n_code = 512
-    learning_rate = 1e-4
+    learning_rate = 2e-4
     img_step = 20
 
     timestamp = datetime.today().strftime('%Y%m%d-%H%M%S')
     log_path = path.join('log', timestamp)
+
+    # TODO: override, continuing from a specific snapshot
+    log_path = 'log/20170205-034325-2'
 
     with tf.Graph().as_default() as graph:
         global_step = tf.Variable(initial_value=0, trainable=False, name='global_step', dtype=tf.int64)
@@ -56,7 +59,7 @@ def main():
                      convolutional=True,
                      variational=True,
                      n_filters=[64, 64, 64, 128, 128, 192, 256],
-                     filter_sizes=[7, 7, 5, 5, 3, 3, 3, 3],
+                     filter_sizes=[7, 7, 5, 5, 3, 3, 3],
                      n_hidden=None,
                      n_code=n_code,
                      dropout=False,
