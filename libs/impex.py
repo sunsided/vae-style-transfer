@@ -5,6 +5,8 @@ from tensorflow.python.framework import graph_util
 
 
 def export_graph(input_path, output_path, output_nodes, debug=False):
+    # todo: might want to look at http://stackoverflow.com/a/39578062/195651
+
     checkpoint = tf.train.latest_checkpoint(input_path)
     importer = tf.train.import_meta_graph(checkpoint + '.meta', clear_devices=True)
 

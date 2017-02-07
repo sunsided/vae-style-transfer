@@ -56,6 +56,9 @@ def main():
 
         import_graph('exported/vae-refine.pb', input_map={'image_batch': image_batch}, prefix='process')
         phase_train = graph.get_tensor_by_name('process/mogrify/vae/phase_train:0')
+
+        embedding = graph.get_tensor_by_name('process/mogrify/vae/variational/add:0')
+
         reconstructed = graph.get_tensor_by_name('process/mogrify/clip:0')
         reconstructed.set_shape((None, 180, 320, 3))
 
@@ -72,9 +75,13 @@ def main():
         try:
             print('Evaluating ...')
             while not coord.should_stop():
-                resized_inputs, results = sess.run([reconstructed,  # reference,
-                                                    refined],
-                                                   feed_dict={phase_train: False})
+                # fetching the embeddings given the inputs ...
+                coeffs = sess.run(embedding, feed_dict={phase_train: False})
+
+                # ... then fetching the images given the embedding.
+                resized_inputs, results = sess.run([reconstructed, refined],
+                                                   feed_dict={phase_train: False,
+                                                              embedding: coeffs})
                 assert resized_inputs.shape == results.shape
 
                 resized_inputs = resized_inputs[:3]
