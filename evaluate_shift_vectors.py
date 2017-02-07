@@ -73,15 +73,48 @@ def main():
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
         try:
+            print('Determining mean representations ...')
+            coeff_means = {}
+            counts = {}
+            while not coord.should_stop():
+                type, coeffs = sess.run([type_batch, embedding], feed_dict={phase_train: False})
+
+                for i, (t, c) in enumerate(zip(type, coeffs)):
+                    if t not in coeff_means:
+                        coeff_means[t] = np.zeros(c.shape)
+                        counts[t] = 0
+                    coeff_means[t] += c
+                    counts[t] += 1
+
+                min_count = np.min(list(counts.values()))
+                if len(counts) >= 3 and min_count > 400:
+                    for k in coeff_means.keys():
+                        coeff_means[k] /= counts[k]
+                    break
+
+            # prior knowledge
+            video_wim_hurry = 0
+            paintings_afremov = 1
+            video_disclosure_magnets = 2
+
             print('Evaluating ...')
             while not coord.should_stop():
-                # fetching the embeddings given the inputs ...
-                reference, coeffs = sess.run([image_batch, embedding], feed_dict={phase_train: False})
+                # obtain embeddings and type identifiers
+                types, reference, coeffs = sess.run([type_batch, image_batch, embedding],
+                                                    feed_dict={phase_train: False})
 
-                # ... then salting the embeddings ...
-                coeffs += np.random.randn(coeffs.shape[0], coeffs.shape[1])
+                # for each coefficient, remove their original mean,
+                # then add back a bit of Leonid Afremov
+                alpha = 0.25
+                beta = 1.0
+                for i in range(coeffs.shape[0]):
+                    coeffs[i] -= alpha*coeff_means[types[i]]
+                    coeffs[i] += beta*coeff_means[paintings_afremov]
 
-                # ... then fetching the images given the new embeddings.
+                    # simply reversing the coefficients is interesting as well
+                    # coeffs[i] = list(reversed(coeffs[i]))
+
+                # ... then fetching the images given the embedding.
                 results = sess.run(refined, feed_dict={phase_train: False, embedding: coeffs})
 
                 assert reference.shape == results.shape
