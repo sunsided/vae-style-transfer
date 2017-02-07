@@ -1,3 +1,9 @@
+"""
+Like evaluate.py, this script loads back the original training data and extracts the embeddings.
+It will also determine the mean embeddings for each of the three input classes and use these
+means to transfer styles between the images.
+"""
+
 from os import path
 from glob import glob
 
@@ -20,7 +26,7 @@ def example_gallery(Xs, reconstructed):
 
     slices = []
 
-    for i in range(3):
+    for i in range(Xs.shape[0]):
         org = Xs[i, :, :, :]
         img = reconstructed[i, :, :, :]
         img = normalize_img(img)

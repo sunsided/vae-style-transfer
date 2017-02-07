@@ -1,3 +1,8 @@
+"""
+This script loads back the original training data, extracts and randomizes the embeddings and uses
+these to generate slightly new images.
+"""
+
 from os import path
 from glob import glob
 

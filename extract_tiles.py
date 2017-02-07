@@ -1,3 +1,7 @@
+"""
+This script is used to extract frames from videos to store them as training data.
+"""
+
 from queue import PriorityQueue
 from threading import Thread
 from random import random
@@ -74,12 +78,15 @@ def load_images(queue: PriorityQueue,
 
 
 def main():
-    image_path = '/home/markus/Downloads/Leonidafremov - Gallery'
+    # contains approx. 500 paintings from http://leonidafremov.deviantart.com/gallery/
+    image_path = '~/Downloads/Leonid Afremov - Gallery'
 
-    video_file_0 = '/media/markus/Nephthys1/Filme/Musikvideos/Wim - See You Hurry.mp4'
+    # https://vimeo.com/22328077
+    video_file_0 = '~/Downloads/Wim - See You Hurry.mp4'
     video_crop_0 = (64, 32, 64, 32)
 
-    video_file_1 = '/home/markus/Downloads/Disclosure - Magnets ft  Lorde/Disclosure - Magnets ft. Lorde (1080p_25fps_H264-128kbit_AAC).mp4'
+    # https://www.youtube.com/watch?v=b_KfnGBtVeA
+    video_file_1 = '~/Downloads/Disclosure - Magnets ft. Lorde.mp4'
     video_crop_1 = (150, 0, 150, 1)
 
     frame_queue = PriorityQueue()
@@ -99,7 +106,7 @@ def main():
 
         aspect = float(height) / float(width)
         new_width = 320
-        new_height = int(new_width * aspect)
+        new_height = 180  # int(new_width * aspect)
         assert new_height == 180
 
         threads = [Thread(target=extract_video_frames,

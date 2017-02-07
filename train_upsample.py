@@ -1,6 +1,15 @@
+"""
+Uses the .tfrecord files and the previously trained VAE to train an optimization network
+consisting of convolutional, transpose convolutional and residual connections.
+This network is used as a post-processing step in an attempt to get some detail back from
+the low-res VAE generated image.
+
+It is not cross-validated; training is also extremely slow at the current set-up. I let it
+run for approx. 18 hours during which lost about 10% of the training error.
+"""
+
 from os import path
 from glob import glob
-from datetime import datetime
 
 import cv2
 import tensorflow as tf

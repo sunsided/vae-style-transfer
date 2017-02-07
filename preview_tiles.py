@@ -1,3 +1,7 @@
+"""
+Test script to ensure the .tfrecord files can be read back.
+"""
+
 from os import path
 from glob import glob
 

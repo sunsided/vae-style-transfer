@@ -1,3 +1,10 @@
+"""
+Uses the .tfrecord files to train a variational autoencoder.
+
+The VAE is not cross-validated; the idea here is to make the encoder "get" the original
+images as good as possible. I stopped training after approx. 30 hours, after which it was still converging.
+"""
+
 from os import path
 from glob import glob
 from datetime import datetime
