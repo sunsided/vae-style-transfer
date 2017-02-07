@@ -47,6 +47,9 @@ def upscale_bilinear(x):
 
 def generator(x, name='upsample'):
     with tf.variable_scope(name):
+        # forcing the input to have a known name
+        x = tf.identity(x, name='x')
+
         shape = x.get_shape()
         height = shape[1].value
         width = shape[2].value
@@ -79,7 +82,9 @@ def generator(x, name='upsample'):
             h, _ = conv2d(h, n_output=output_channels, d_h=1, d_w=1)
             h = tf.nn.relu(h, name='relu')
 
-        return h
+        # forcing the output to have a known name
+        y = tf.identity(h, name='y')
+        return y
 
 
 def main():
@@ -95,14 +100,18 @@ def main():
     lr_train = 1e-4
     img_step = 25
 
-    timestamp = datetime.today().strftime('%Y%m%d-%H%M%S')
-    log_path = path.join('log.upsample', timestamp)
+    # timestamp = datetime.today().strftime('%Y%m%d-%H%M%S')
+    # log_path = path.join('log.upsample', timestamp)
+    log_path = path.join('log.upsample', '20170207-021128-2')
 
     with tf.Graph().as_default() as graph:
         global_step = tf.Variable(initial_value=0, trainable=False, name='global_step', dtype=tf.int64)
         learning_rate = tf.placeholder(tf.float32, shape=(), name='learning_rate')
 
         image_batch, type_batch = import_images(tfrecord_file_names, max_reads=max_reads, batch_size=batch_size)
+
+        # forcing the inputs to have a known name
+        image_batch = tf.identity(image_batch, name='image_batch')
 
         # todo: use augmentation; requires tf.map_fn() to work across batches
         # image_batch = tf.image.random_flip_left_right(image_batch)

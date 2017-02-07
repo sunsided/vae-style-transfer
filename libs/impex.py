@@ -34,10 +34,10 @@ def export_graph(input_path, output_path, output_nodes, debug=False):
 
     if debug:
         print('Freezing the graph ...')
-        with tf.Session() as sess:
-            importer.restore(sess, checkpoint)
-            output_graph_def = graph_util.convert_variables_to_constants(sess, gd, output_nodes)
-            tf.train.write_graph(output_graph_def, path.dirname(output_path), path.basename(output_path), as_text=False)
+    with tf.Session() as sess:
+        importer.restore(sess, checkpoint)
+        output_graph_def = graph_util.convert_variables_to_constants(sess, gd, output_nodes)
+        tf.train.write_graph(output_graph_def, path.dirname(output_path), path.basename(output_path), as_text=False)
 
 
 def import_graph(input_path, output_nodes=None, input_map=None, debug=False, use_current_graph=True, prefix='imported'):
