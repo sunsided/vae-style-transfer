@@ -1,5 +1,5 @@
 """
-Like evaluate_shift_vectors, this file will take an input video and then apply an embedding shift.
+Like evaluate_shift_vectors, this file will take input frames and then apply an embedding shift.
 However, this script uses the embeddings to modify video sequences.
 """
 
